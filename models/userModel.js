@@ -2,11 +2,7 @@ const mongoose = require('mongoose');
 
 // Define the User schema
 const userSchema = new mongoose.Schema({
-    userId: {
-        type: String,
-        required: true,
-        unique: true
-    },
+
     username: {
         type: String,
         required: true,
@@ -24,12 +20,18 @@ const userSchema = new mongoose.Schema({
     },
     avatar: {
         type: String,
-        default: null, 
-        match: [/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, 'Invalid URL format']
     },
     channels: {
         type: [String], // Array of strings to store channel IDs // I might convert it into mongodb.ObjectId
         default: []
+    },
+    subscribers: {
+        type: Number, // kis kis ko maine subscribe kiya hai
+        default: 0,
+        min: [0, 'Subscribers count cannot be less than zero.']
+    },
+    subscribedUsers: {
+        type: [String] // mere kitne subscribers hai
     }
 }, {
     timestamps: true
@@ -37,5 +39,7 @@ const userSchema = new mongoose.Schema({
 
 
 
-const User = mongoose.model('User', userSchema);
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
 module.exports = User;
