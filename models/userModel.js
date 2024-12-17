@@ -22,16 +22,16 @@ const userSchema = new mongoose.Schema({
         type: String,
     },
     channels: {
-        type: [String], // Array of strings to store channel IDs // I might convert it into mongodb.ObjectId
-        default: []
+        // channels that I(as a user) own
+        type: [mongoose.Schema.Types.ObjectId], // Array of strings to store channel IDs // I might convert it into mongodb.ObjectId
+        default: [],
+        ref: "Channel",
     },
-    subscribers: {
-        type: Number, // kis kis ko maine subscribe kiya hai
-        default: 0,
-        min: [0, 'Subscribers count cannot be less than zero.']
-    },
-    subscribedUsers: {
-        type: [String] // mere kitne subscribers hai
+    subscribedChannels: {
+        // channels that I've subscribed to
+        type: [mongoose.Schema.Types.ObjectId] ,
+        default: [],
+        ref: "Channel",
     }
 }, {
     timestamps: true

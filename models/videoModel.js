@@ -1,13 +1,12 @@
 const mongoose = require('mongoose');
-const {commentSchema} = require("./CommentModel.js")
 
 
 // Define the Video Schema
 const videoSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true,
-  },
+  // userId: {
+  //   type: String,
+  //   required: true,
+  // },
   videoUrl: {
     type: String,
     required: true,
@@ -27,12 +26,13 @@ const videoSchema = new mongoose.Schema({
     trim: true
   },
   channelId: {
-    type: String,
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Channel",
+    required: true,
   },
   uploader: {
     type: String,
-    required: true
+    required: true,
   },
   views: {
     type: Number,
@@ -52,14 +52,15 @@ const videoSchema = new mongoose.Schema({
     default: Date.now(),
   },
   comments: {
-    type: [{commentSchema}], // Array of comments
+    type: [mongoose.Schema.Types.ObjectId], // Array of comments
+    ref: "Comment",
     default: []
   }
 }, {
   timestamps: true
 });
 
- 
+
 const Video = mongoose.model('Video', videoSchema);
 
 module.exports = Video;

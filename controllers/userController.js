@@ -14,19 +14,25 @@ async function getAllUser(req, res) {
 }
 
 async function getUser(req, res) {
+  const { id } = req.params; // Extract the user ID from the request parameters
+
   try {
-    // console.log(req.params.id);
-    // let id = req.params.id;
-    let user = await User.findById(req.params.id);
-    console.log(user);
+    // Find the user by ID
+    const user = await User.findById(id)
+      .populate('channels') // Populate the channels the user owns
+      .populate('subscribedChannels'); // Populate the channels the user is subscribed to
+
     if (!user) {
-      res.status(404).send("No user found.")
-      return;
+      // If no user is found, return a 404 error
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    // If user is found, send the user data as a response
     res.status(200).json(user);
-  }
-  catch (err) {
-    res.status(500).send("Something went wrong while fetching user...");
+  } catch (error) {
+    // Handle any errors during the query
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 }
 
@@ -43,20 +49,23 @@ async function updateUser(req, res) {
   }
 
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      {
-        $set: req.body,
-      }, { new: true }
-    )
+    const userId = req.params.id;
+    const updatedData = req.body;
+
+    // Find and update the user by ID
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedData, { new: true, runValidators: true });
+
+    if (!updatedUser) {
+      // If no user is found, return a 404 error
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Send the updated user data as a response
     res.status(200).json(updatedUser);
-    return;
-  }
-  catch (err) {
-    res.json({
-      success: false,
-      message: "Something went wrong while updating user..."
-    })
+  } catch (error) {
+    // Handle any errors during the update
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 
 }
@@ -80,93 +89,51 @@ async function deleteUser(req, res) {
 
 async function subscribeChannel(req, res) {
 
-  let id = req.body.channelUserId; // channelUserId
-  console.log(id); 
   try {
+    const userId = req.params.id; // Get the user ID from the request parameters
+    const { channelId } = req.body;
 
-    const channelUser = await User.findById(id);
-
-    // Check if the user is already subscribed
-    if (channelUser.subscribedUsers.includes(req.params.id)) {
-      return res.status(400).json({ message: "User is already subscribed to this channel." });
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // jisko mai subscribe kr raha hun...
-    await User.findByIdAndUpdate(id, {
-      $push: { subscribedUsers: req.params.id }
-    })
-
-    // kis kis ko maine subscribe kiya hai
-    await User.findByIdAndUpdate(req.params.id, {
-      $inc: { subscribers: 1 }
-    })
-    res.status(200).json("Subscription successfull...")
-  }
-  catch (err) {
-    res.status(500).send("Something went wrong while subscribing...")
-  }
-}
-
-async function unsubscribeChannel(req, res) {
-  let id = req.body.channelUserId;
-  try {
-    await User.findByIdAndUpdate(id, {
-      $pull: { subscribedUsers: req.params.id },
-    }, {new: true});
-    // await User.findByIdAndUpdate(req.params.id, {
-    //   $inc: { subscribers: -1 },
-    // });
-
-    const channelUser = await User.findById(req.params.id);
-    if (channelUser.subscribers > 0) {
-      await User.findByIdAndUpdate(req.params.id, {
-        $inc: { subscribers: -1 },
-      });
+    // Find the channel to verify it exists
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
     }
 
-    res.status(200).json("Unsubscription successfull.")
-  } catch (err) {
-    res.status(500).send("Something wrong while unsubscribing")
+    // Check if the user is already subscribed or not
+    const isSubscribed = user.subscribedChannels.includes(channelId);
+
+    if (isSubscribed) {
+      // Unsubscribe the user
+      user.subscribedChannels = user.subscribedChannels.filter(id => id !== channelId);
+      channel.subscribedUsers = channel.subscribedUsers.filter(id => id !== userId);
+      await user.save();
+      await channel.save();
+      return res.status(200).json({ message: 'Unsubscribed successfully' });
+    } else {
+      // Subscribe the user
+      user.subscribedChannels.push(channelId);
+      channel.subscribedUsers.push(userId);
+      await user.save();
+      await channel.save();
+      return res.status(200).json({ message: 'Subscribed successfully' });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 }
 
-async function likeVideo(req, res) {
-  let id = req.body.id;
-  let videoId = req.params.videoId;
-  console.log("id", id);
-  console.log("vidoeId", videoId);
-  try {
-    await Video.findByIdAndUpdate(videoId, {
-      $addToSet: { likes: id },
-      $pull: { dislikes: id }
-    })
-    res.status(200).send("The video has been liked successfully")
-    return;
-  }
-  catch (err) {
-    res.status(500).send("Can't like the video.")
-  }
-}
 
-async function dislikeVideo(req, res) {
-  const id = req.body.id;
-  const videoId = req.params.videoId;
-  try {
-    await Video.findByIdAndUpdate(videoId, {
-      $addToSet: { dislikes: id },
-      $pull: { likes: id }
-    })
-    res.status(200).send("The video has been disliked.")
-    return ;
-  } catch (err) {
-    res.status(500).send("Cant dislike the video.")
-  }
-}
-
-// comment on a video
 
 
 
 module.exports = {
-  getAllUser, getUser, updateUser, deleteUser, subscribeChannel, unsubscribeChannel, likeVideo, dislikeVideo
+  getAllUser, getUser, updateUser, deleteUser, subscribeChannel
 }

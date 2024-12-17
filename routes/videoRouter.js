@@ -1,5 +1,5 @@
 const express = require("express");
-const { addVideo, updateVideo, deleteVideo, getByTag, sub, random, trend, addView, getVideo, search, getAllVideos } = require("../controllers/videoController");
+const { addVideo, updateVideo, deleteVideo, getByTag, sub, random, trend, addView, getVideo, search, getAllVideos, likeVideo, dislikeVideo } = require("../controllers/videoController");
 const verifyToken = require("../verifyToken")
 
 const VideoRouter = express.Router();
@@ -16,6 +16,9 @@ VideoRouter.get("/random", random)
 VideoRouter.get("/sub", verifyToken, sub)
 // VideoRouter.get("/getByTag", getByTag)
 VideoRouter.post("/search", search);
+
+VideoRouter.put("/like/:videoId", verifyToken, likeVideo); // will move in video route 
+VideoRouter.put("/dislike/:videoId", verifyToken, dislikeVideo);  // will move in video route
 
 
 

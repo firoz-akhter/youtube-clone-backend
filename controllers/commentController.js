@@ -4,47 +4,84 @@ const Video = require("../models/videoModel");
 
 
 async function addComment(req, res) {
-  const {videoId, userId, text} = req.body
-  const newComment = new Comment({ videoId, userId, text });
   try {
-    const savedComment = await newComment.save();
-    res.status(200).json(savedComment);
-  } catch (err) {
-    res.status(500).send("something went wrong while adding comment.")
+    const { videoId, text } = req.body;
+    const userId = req.user.id; // Assumes user is already authenticated and user ID is available via `req.user.id`
+
+    if (!text || !videoId) {
+      return res.status(400).json({ message: "Video ID and comment text are required." });
+    }
+
+    // Create a new comment
+    const comment = new Comment({
+      videoId,
+      userId,
+      text,
+    });
+
+    // Save the comment to the database
+    await comment.save();
+
+    // Add this comment to the video's comments array
+    await Video.findByIdAndUpdate(videoId, {
+      $push: { comments: comment._id },
+    });
+
+    res.status(201).json({ message: "Comment added successfully", comment });
+  } catch (error) {
+    console.error("Error adding comment:", error);
+    res.status(500).json({ message: "Server error while adding comment" });
   }
 }
 
 async function deleteComment(req, res) {
   try {
-    const comment = await Comment.findById(res.params.id);
-    const video = await Video.findById(res.params.id);
-    if (req.user.id === comment.userId || req.user.id === video.userId) {
-      await Comment.findByIdAndDelete(req.params.id);
-      res.status(200).json("The comment has been deleted.");
-      return;
-    } else {
-      res.status(403).send("You can't delete others video")
-      return;
+    const commentId = req.params.commentId;
+    const userId = req.user.id; // Assuming `verifyToken` middleware sets the user ID in `req.user`
+
+    // Find the comment to be deleted
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found." });
     }
-  } catch (err) {
-    res.status(500).send("Something went wrong while deleting video")
+
+    // Check if the user is the owner of the comment
+    if (comment.userId.toString() !== userId) {
+      return res.status(403).json({ message: "You are not authorized to delete this comment." });
+    }
+
+    // Remove the comment from the database
+    await Comment.findByIdAndRemove(commentId);
+
+    // Also remove the comment from the video's comments array
+    await Video.findByIdAndUpdate(comment.videoId, {
+      $pull: { comments: commentId },
+    });
+
+    res.status(200).json({ message: "Comment deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(500).json({ message: "Server error while deleting comment." });
   }
 }
 
 async function getComments(req, res) {
-  let videoId = req.params.videoId;
-  if(!videoId) {
-    res.send("VideoId is missing");
-    return ;
-  }
   try {
-    console.log("finding comments for a video")
-    const comments = await Comment.find({ videoId: req.params.videoId });
-    console.log("comments", comments);
+    const { videoId } = req.params;
+
+    // Find comments associated with the video ID
+    const comments = await Comment.find({ videoId }).populate("userId", "username avatar");
+
+    if (!comments.length) {
+      return res.status(404).json({ message: "No comments found for this video" });
+    }
+
     res.status(200).json(comments);
-  } catch (err) {
-    res.status(500).send("Something went wrong while fetching comments of a single video")
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ message: "Server error while fetching comments" });
   }
 }
 
-module.exports = {deleteComment, addComment, getComments}
+module.exports = { deleteComment, addComment, getComments }

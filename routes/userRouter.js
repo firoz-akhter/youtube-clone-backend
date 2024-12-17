@@ -10,12 +10,10 @@ UserRouter.get("/getAllUser", getAllUser);
 UserRouter.get("/getuser/:id", getUser);
 UserRouter.put("/updateuser/:id", verifyToken, updateUser); 
 UserRouter.delete("/deleteuser/:id", verifyToken, deleteUser);
-// subscribe user
-UserRouter.put("/sub/:id", verifyToken, subscribeChannel);
-// unsubscribe user
-UserRouter.put("/unsub/:id", verifyToken, unsubscribeChannel);
-UserRouter.put("/like/:videoId", verifyToken, likeVideo);
-UserRouter.put("/dislike/:videoId", verifyToken, dislikeVideo);
+// subscribe or unsubscribe a channel
+UserRouter.put("/subscribe/:id", verifyToken, subscribeChannel);
+
+
 
 
 

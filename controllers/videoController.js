@@ -82,7 +82,7 @@ async function getAllVideos(req, res) {
 }
 
 async function addView(req, res) {
-    
+
     try {
         await Video.findByIdAndUpdate(req.params.id, {
             $inc: { views: 1 },
@@ -153,12 +153,80 @@ async function search(req, res) {
             title: { $regex: query, $options: "i" },
         }).limit(40);
         res.status(200).json(videos);
-        return ;
+        return;
     }
     catch (err) {
         res.status(500).send("Something went wrong while searching")
     }
 }
 
+async function likeVideo(req, res) {
+    try {
+        const { videoId } = req.params;
+        const userId = req.user.id; // Extract user ID from the verified token
 
-module.exports = { getAllVideos, addVideo, updateVideo, deleteVideo, getVideo, addView, random, trend, sub, getByTag, search }
+        // Find the video by ID
+        const video = await Video.findById(videoId);
+        if (!video) {
+            return res.status(404).json({ message: "Video not found" });
+        }
+
+        // Check if the user has already liked the video
+        if (video.likes.includes(userId)) {
+            return res.status(400).json({ message: "You have already liked this video" });
+        }
+
+        // Add the user ID to the likes array and remove it from dislikes if present
+        video.likes.push(userId);
+        video.dislikes = video.dislikes.filter((id) => id !== userId);
+
+        // Save the updated video
+        await video.save();
+
+        res.status(200).json({
+            message: "Video liked successfully",
+            likes: video.likes.length,
+            dislikes: video.dislikes.length,
+        });
+    } catch (error) {
+        console.error("Error liking the video:", error);
+        res.status(500).json({ message: "Server error while liking the video" });
+    }
+}
+
+async function dislikeVideo(req, res) {
+    try {
+        const { videoId } = req.params;
+        const userId = req.user.id; // Extract user ID from the verified token
+
+        // Find the video by ID
+        const video = await Video.findById(videoId);
+        if (!video) {
+            return res.status(404).json({ message: "Video not found" });
+        }
+
+        // Check if the user has already disliked the video
+        if (video.dislikes.includes(userId)) {
+            return res.status(400).json({ message: "You have already disliked this video" });
+        }
+
+        // Add the user ID to the dislikes array and remove it from likes if present
+        video.dislikes.push(userId);
+        video.likes = video.likes.filter((id) => id !== userId);
+
+        // Save the updated video
+        await video.save();
+
+        res.status(200).json({
+            message: "Video disliked successfully",
+            likes: video.likes.length,
+            dislikes: video.dislikes.length,
+        });
+    } catch (error) {
+        console.error("Error disliking the video:", error);
+        res.status(500).json({ message: "Server error while disliking the video" });
+    }
+}
+
+
+module.exports = { likeVideo, dislikeVideo, getAllVideos, addVideo, updateVideo, deleteVideo, getVideo, addView, random, trend, sub, getByTag, search }

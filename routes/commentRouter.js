@@ -8,8 +8,7 @@ const CommentRouter = express.Router();
 
 CommentRouter.get("/getComments/:videoId", getComments );
 CommentRouter.post("/addComment", verifyToken, addComment);
-// deleting comment have some issue, we'll fix it
-CommentRouter.delete("/deleteComment/:id", verifyToken, deleteComment);
+CommentRouter.delete("/deleteComment/:commentId", verifyToken, deleteComment);
 
 
 
