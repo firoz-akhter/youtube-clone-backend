@@ -208,10 +208,53 @@ async function getAllChannel(req, res) {
   }
 }
 
+async function subscribeChannel(req, res) {
+
+  try {
+    const userId = req.user.id; // Get the user ID from the request parameters
+    const channelId = req.params.id;
+
+    // Find the user by userId
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find the channel to verify it exists
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
+    }
+
+    // Check if the user is already subscribed or not
+    const isSubscribed = user.subscribedChannels.includes(channelId);
+
+    if (isSubscribed) {
+      // Unsubscribe the user
+      user.subscribedChannels = user.subscribedChannels.filter(id => id !== channelId);
+      channel.subscribedUsers = channel.subscribedUsers.filter(id => id !== userId);
+      await user.save();
+      await channel.save();
+      return res.status(200).json({ message: 'Unsubscribed successfully' });
+    } else {
+      // Subscribe the user
+      user.subscribedChannels.push(channelId);
+      channel.subscribedUsers.push(userId);
+      await user.save();
+      await channel.save();
+      return res.status(200).json({ message: 'Subscribed successfully' });
+    }
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
 
 
 
 
 
 
-module.exports = { addChannel, getChannelAdmin, updateChannel, deleteChannel, getChannel, getChannelVideos, getAllChannel }
+
+module.exports = { subscribeChannel, addChannel, getChannelAdmin, updateChannel, deleteChannel, getChannel, getChannelVideos, getAllChannel }

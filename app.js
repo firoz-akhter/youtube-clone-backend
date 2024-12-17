@@ -20,11 +20,11 @@ app.get("/", (req, res) => {
     res.send("Hello from backend")
 })
 
-app.use("/auth", AuthRouter);
-app.use("/users/", UserRouter);
-app.use("/channels/", ChannelRouter);
-app.use("/comments/", CommentRouter);
-app.use("/videos/", VideoRouter);
+app.use("/", AuthRouter);
+app.use("/", UserRouter);
+app.use("/", ChannelRouter);
+app.use("/", CommentRouter);
+app.use("/", VideoRouter);
 
  
 

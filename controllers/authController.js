@@ -1,4 +1,4 @@
-const User = require("../models/userModel");
+const User = require("../models/UserModel")
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
@@ -53,17 +53,13 @@ async function register(req, res) {
 
 
 async function login(req, res) {
-
     let { email, password } = req.body;
 
     if (!email || !password) {
         res.status(400).send("Email and password both required...")
         return;
     }
-
-
     try {
-
         // finding saved user by email
         let user = await User.findOne({ email })
 
@@ -95,8 +91,6 @@ async function login(req, res) {
         console.log(err);
         res.status(500).send("Internal Server error");
     }
-
-
 }
 
 

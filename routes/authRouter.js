@@ -9,8 +9,8 @@ AuthRouter.post("/register", register)
 // sign in
 AuthRouter.post("/login", login)
 
-// google auth
-AuthRouter.post("/googlelogin", )
+// // google auth
+// AuthRouter.post("/googlelogin", )
 
 
 

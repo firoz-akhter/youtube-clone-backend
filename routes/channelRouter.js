@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require("../verifyToken");
-const { addChannel, getChannelAdmin, getChannel, updateChannel, deleteChannel, getChannelVideos, getAllChannel } = require("../controllers/channelController");
+const { addChannel, getChannelAdmin, getChannel, updateChannel, deleteChannel, getChannelVideos, getAllChannel, subscribeChannel } = require("../controllers/channelController");
 
 
 const ChannelRouter = express.Router();
@@ -18,5 +18,7 @@ ChannelRouter.delete("/deleteChannel/:id", verifyToken, deleteChannel);
 ChannelRouter.get("/getChannelVideos/:id", getChannelVideos);
 ChannelRouter.get("/getAllChannel", getAllChannel); // we'll provide only few details related to channel, {exclude subscribedUser array}
 
+
+ChannelRouter.put("/subscribe/:id", verifyToken, subscribeChannel);
 
 module.exports = ChannelRouter;

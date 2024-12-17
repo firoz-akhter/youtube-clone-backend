@@ -7,11 +7,10 @@ const UserRouter = express.Router();
 
 
 UserRouter.get("/getAllUser", getAllUser);
-UserRouter.get("/getuser/:id", getUser);
-UserRouter.put("/updateuser/:id", verifyToken, updateUser); 
+UserRouter.get("/getUser/:id", getUser);
+UserRouter.put("/updateUser/:id", verifyToken, updateUser); 
 UserRouter.delete("/deleteuser/:id", verifyToken, deleteUser);
 // subscribe or unsubscribe a channel
-UserRouter.put("/subscribe/:id", verifyToken, subscribeChannel);
 
 
 
