@@ -18,17 +18,11 @@ const channelSchema = new mongoose.Schema({
     trim: true,
   },
   channelBanner: {
-    type: String, // URL for the banner
+    type: String, 
     // required: true,
-    validate: {
-      validator: function (url) {
-        return /^(https?:\/\/)[^\s]+$/.test(url); // Validate URL format
-      },
-      message: "Invalid URL for channel banner.",
-    },
   },
   subscribedUsers: {
-    type: [mongoose.Schema.Types.ObjectId], // channel pe kitne subscribers hai
+    type: [mongoose.Schema.Types.ObjectId], 
     default: [],
     ref: "User",
   }, 
@@ -37,7 +31,7 @@ const channelSchema = new mongoose.Schema({
     default: 0,
   },
   videos: {
-    type: [mongoose.Schema.Types.ObjectId], // videos on this channel
+    type: [mongoose.Schema.Types.ObjectId], 
     ref: "Video",
     default: [],
   },

@@ -24,7 +24,7 @@ async function addChannel(req, res) {
       owner: userId,
     });
 
-    // Save the channel to the database
+    // saving channel to database
     const savedChannel = await newChannel.save();
 
     // Add the channel to the user's owned channels
@@ -48,23 +48,23 @@ async function getChannelAdmin(req, res) {
   try {
     // Fetch the channel with all details
     const channel = await Channel.findById(id)
-      .populate("owner", "username email avatar") // Populate the owner's basic details
-      .populate("subscribedUsers", "username email avatar") // Populate the details of subscribed users
+      .populate("owner", "username email avatar") 
+      .populate("subscribedUsers", "username email avatar") 
       .populate({
-        path: "videos", // Populate videos with their details
-        select: "title description views likes thumbnailUrl", // Only include relevant fields
+        path: "videos", 
+        select: "title description views likes thumbnailUrl", // 
       });
 
     // If no channel is found, return an error
     if (!channel) {
-      return res.status(404).json({ message: "Channel not found" });
+      return res.status(404).send("channel not found");
     }
 
     // Check if the current user is the owner of the channel
     // console.log("userId", userId);
     // console.log("channel.owner._id.toString()", channel.owner.id);
     if (channel.owner.id !== userId) {
-      return res.status(403).json({ message: "This is not your channel." });
+      return res.status(403).send("This is not your channel");
     }
 
     // Return the channel details
@@ -74,50 +74,48 @@ async function getChannelAdmin(req, res) {
     });
   } catch (error) {
     console.error("Error fetching channel:", error);
-    res.status(500).json({ message: "Server error while fetching channel" });
+    res.status(500).send("Error while fetching channel");
   }
 }
 
 async function getChannel(req, res) {
-  const { id } = req.params; // Channel ID from URL params
+  const { id } = req.params; // Channel ID 
 
   try {
     // Fetch the channel, excluding the subscribedUsers field
     const channel = await Channel.findById(id)
-      .select("-subscribedUsers") // Exclude subscribedUsers from the response
-      .populate("owner", "username email avatar") // Populate owner's details
+      .select("-subscribedUsers") // excluding subscribers
+      .populate("owner", "username email avatar") // populating owner
       .populate({
         path: "videos",
         select: "title views thumbnailUrl", // Include only relevant fields for videos
       });
 
-    // If channel not found, return 404
     if (!channel) {
-      return res.status(404).json({ message: "Channel not found" });
+      return res.status(404).send("channel not found");
     }
 
-    // Return the channel details
     res.status(200).json({
       message: "Channel fetched successfully",
       channel,
     });
   } catch (error) {
     console.error("Error fetching channel:", error);
-    res.status(500).json({ message: "Server error while fetching channel" });
+    res.status(500).send("Something went wrong while fetching channel");
   }
 }
 
 async function updateChannel(req, res) {
   const { id } = req.params; // Channel ID
-  const userId = req.user._id; // Extracted from `verifyToken` middleware
-  const { channelName, description, channelBanner } = req.body; // Fields to update
+  const userId = req.user._id; // from `verifyToken` middleware
+  const { channelName, description, channelBanner } = req.body; 
 
   try {
-    // Fetch the channel to verify ownership
+    
     const channel = await Channel.findById(id);
 
     if (!channel) {
-      return res.status(404).json({ message: "Channel not found" });
+      return res.status(404).send("Channel not found");
     }
 
     // Check if the current user is the owner of the channel
@@ -128,15 +126,13 @@ async function updateChannel(req, res) {
     // }
 
     if (channel.owner._id.toString() !== userId) {
-      return res.status(403).json({ message: "This is not your channel." });
+      return res.status(403).send("This is not your channel.");
     }
 
-    // Update the channel details
     if (channelName) channel.channelName = channelName;
     if (description) channel.description = description;
     if (channelBanner) channel.channelBanner = channelBanner;
 
-    // Save the updated channel
     const updatedChannel = await channel.save();
 
     res.status(200).json({
@@ -151,10 +147,9 @@ async function updateChannel(req, res) {
 
 async function deleteChannel(req, res) {
   const { id } = req.params; // Channel ID
-  const userId = req.user._id; // Extracted from `verifyToken` middleware
+  const userId = req.user._id; // from `verifyToken` middleware
 
   try {
-    // Fetch the channel to verify existence and ownership
     const channel = await Channel.findById(id);
 
     if (!channel) {
@@ -166,21 +161,20 @@ async function deleteChannel(req, res) {
       return res.status(403).json({ message: "You are not authorized to delete this channel." });
     }
 
-    // Remove the channel from the user's owned channels list
+    // removing channel from the user's owned channels list
     await User.findByIdAndUpdate(userId, {
       $pull: { channels: id },
     });
 
-    // Remove all associated videos of the channel
+    // Removing all videos of the channel
     await Video.deleteMany({ channelId: id });
 
-    // Delete the channel
     await Channel.findByIdAndDelete(id);
 
-    res.status(200).json({ message: "Channel deleted successfully" });
+    res.status(200).send("Channel deleted successfully");
   } catch (error) {
     console.error("Error deleting channel:", error);
-    res.status(500).json({ message: "Server error while deleting channel" });
+    res.status(500).send("Something went wrong while deleting channel");
   }
 }
 
@@ -188,23 +182,22 @@ async function getChannelVideos(req, res) {
   const { id } = req.params; // Channel ID
 
   try {
-    // Verify that the channel exists
     const channel = await Channel.findById(id);
 
     if (!channel) {
       return res.status(404).json({ message: "Channel not found" });
     }
 
-    // Fetch all videos associated with the channel
-    const videos = await Video.find({ channelId: id }).select("-comments"); // Exclude comments if not needed
+    // Fetching all videos of the channel
+    const videos = await Video.find({ channelId: id }).select("-comments"); // Exclude comments 
 
     res.status(200).json({
-      message: "Videos retrieved successfully",
+      message: "Videos fetched successfully",
       videos,
     });
   } catch (error) {
     console.error("Error fetching channel videos:", error);
-    res.status(500).json({ message: "Server error while fetching channel videos" });
+    res.status(500).send("Some error while fetching channel videos");
   }
 }
 
@@ -219,29 +212,27 @@ async function getAllChannel(req, res) {
     });
   } catch (error) {
     console.error("Error fetching all channels:", error);
-    res.status(500).json({ message: "Server error while fetching channels" });
+    res.status(500).send("Server error while fetching channels");
   }
 }
 
 async function subscribeChannel(req, res) {
 
   try {
-    const userId = req.user._id; // Get the user ID from the request parameters, via verifyToken
+    const userId = req.user._id; // userId via verifyToken
     const channelId = req.params.id;
 
-    // Find the user by userId
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the channel to verify it exists
     const channel = await Channel.findById(channelId);
     if (!channel) {
       return res.status(404).json({ message: 'Channel not found' });
     }
 
-    // Check if the user is already subscribed or not
+    // user is already subscribed or not
     const isSubscribed = user.subscribedChannels.includes(channelId);
 
     if (isSubscribed) {
@@ -262,7 +253,7 @@ async function subscribeChannel(req, res) {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).send("Something went wrong while subscribing");
   }
 }
 

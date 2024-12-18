@@ -1,7 +1,6 @@
 const mongoose = require("mongoose")
 
 
-// Define the Comment Schema
 const commentSchema = new mongoose.Schema({
   videoId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,7 +10,7 @@ const commentSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: 'User' // Optional: specify the model name for referencing
+    ref: 'User'
   },
   text: {
     type: String,

@@ -10,7 +10,7 @@ AuthRouter.post("/register", register)
 AuthRouter.post("/login", login)
 
 // // google auth
-// AuthRouter.post("/googlelogin", )
+// AuthRouter.post("/googlelogin", ) // will implement later
 
 
 

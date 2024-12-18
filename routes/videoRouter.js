@@ -14,7 +14,7 @@ VideoRouter.put("/addView/:id", addView)
 VideoRouter.get("/trend", trend)
 VideoRouter.get("/random", random)
 VideoRouter.get("/sub", verifyToken, sub)
-// VideoRouter.get("/getByTag", getByTag)
+// VideoRouter.get("/getByTag", getByTag) // we might or might not need it, included in search route
 VideoRouter.post("/search", search);
 
 VideoRouter.put("/like/:videoId", verifyToken, likeVideo); // will move in video route 

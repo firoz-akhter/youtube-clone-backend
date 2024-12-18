@@ -10,8 +10,9 @@ UserRouter.get("/getAllUser", getAllUser);
 UserRouter.get("/getUser/:id", getUser);
 UserRouter.put("/updateUser/:id", verifyToken, updateUser); 
 UserRouter.delete("/deleteuser/:id", verifyToken, deleteUser);
-// subscribe or unsubscribe a channel
 
+// subscribe or unsubscribe a channel
+// we moved subscribe or unsubscribe a channel to channelRoutes
 
 
 

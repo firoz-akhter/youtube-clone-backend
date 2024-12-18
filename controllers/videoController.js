@@ -6,9 +6,8 @@ let User = require("../models/UserModel");
 async function addVideo(req, res) {
     try {
         const { videoUrl, title, thumbnailUrl, description, channelId } = req.body;
-        const uploader = req.user._id; // Assuming `verifyToken` middleware sets `req.user`
+        const uploader = req.user._id; // uploader/userId via verifyToken
 
-        // Validate required fields
         if (!videoUrl || !title || !thumbnailUrl || !description || !channelId) {
             return res.status(400).json({ message: "All fields are required." });
         }
@@ -18,13 +17,12 @@ async function addVideo(req, res) {
         if (!channel) {
             return res.status(404).json({ message: "Channel not found." });
         }
-        console.log("channel.owner._id.toString", channel.owner._id.toString());
-        console.log("uploader", uploader);
+        // console.log("channel.owner._id.toString", channel.owner._id.toString());
+        // console.log("uploader", uploader);
         if (channel.owner._id.toString() !== uploader) {
             return res.status(403).json({ message: "You are not authorized to add videos to this channel." });
         }
 
-        // Create and save the new video
         const newVideo = new Video({
             videoUrl,
             title,
@@ -35,14 +33,13 @@ async function addVideo(req, res) {
         });
         await newVideo.save();
 
-        // Add the video to the channel's video list
         channel.videos.push(newVideo._id);
         await channel.save();
 
         res.status(201).json({ message: "Video added successfully!", video: newVideo });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("Could not add video, something went wrong...");
     }
 
 }
@@ -50,21 +47,20 @@ async function addVideo(req, res) {
 async function updateVideo(req, res) {
     try {
         const videoId = req.params.id;
-        const userId = req.user._id; // Assuming `verifyToken` middleware sets `req.user`
+        const userId = req.user._id; // userId coming from verify token(middleware)
         const { title, description, thumbnailUrl } = req.body;
 
-        // Fetch the video from the database
         const video = await Video.findById(videoId);
 
         if (!video) {
             return res.status(404).json({ message: "Video not found." });
         }
 
-        // Ensure the user is the uploader of the video
+        // making sure the user is the uploader of the video
         console.log("video.uploader.toString", video.uploader.toString());
         console.log("userId", userId);
         if (video.uploader.toString() !== userId) {
-            return res.status(403).json({ message: "You are not authorized to update this video." });
+            return res.status(403).json({ message: "You can update only your video." });
         }
 
         // Update the fields (only if provided in req.body)
@@ -72,53 +68,49 @@ async function updateVideo(req, res) {
         if (description) video.description = description;
         if (thumbnailUrl) video.thumbnailUrl = thumbnailUrl;
 
-        // Save the updated video
         await video.save();
 
         res.status(200).json({ message: "Video updated successfully!", video });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("can't update, something went wrong.");
     }
 }
 
 async function deleteVideo(req, res) {
     try {
         const videoId = req.params.id;
-        const userId = req.user._id; // Assuming `verifyToken` middleware sets `req.user`
+        const userId = req.user._id; 
 
-        // Fetch the video to be deleted
         const video = await Video.findById(videoId);
 
         if (!video) {
             return res.status(404).json({ message: "Video not found." });
         }
 
-        // Check if the user is the owner of the channel that uploaded the video
+        // making sure owner and current user who is deleting is same
         const channel = await Channel.findById(video.channelId);
 
         if (!channel) {
             return res.status(404).json({ message: "Channel not found." });
         }
 
-        console.log("chanel.owner._id.toString()", channel.owner._id.toString());
-        console.log("userId", userId);
+        // console.log("chanel.owner._id.toString()", channel.owner._id.toString());
+        // console.log("userId", userId);
 
         if (channel.owner._id.toString() !== userId) {
-            return res.status(403).json({ message: "You are not authorized to delete this video." });
+            return res.status(403).json({ message: "You can delete only your video." });
         }
 
-        // Delete the video
         await Video.findByIdAndDelete(videoId);
 
-        // Remove the video ID from the channel's videos array
         channel.videos = channel.videos.filter((vid) => vid.toString() !== videoId);
         await channel.save();
 
-        res.status(200).json({ message: "Video deleted successfully!" });
+        res.status(200).ssend("Video deleted successfully!");
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("Something went wrong while deleting");
     }
 }
 
@@ -126,16 +118,15 @@ async function getVideo(req, res) {
     try {
         const videoId = req.params.id;
 
-        // Fetch the video by ID and populate references
         const video = await Video.findById(videoId)
             .populate({
                 path: "channelId",
-                select: "channelName description channelBanner", // Include only selected fields from the channel
+                select: "channelName description channelBanner", // 
             })
             .populate({
                 path: "comments",
-                select: "text userId timestamp", // Include only selected fields from comments
-                populate: { path: "userId", select: "username avatar" }, // Include user details in comments
+                select: "text userId timestamp", // 
+                populate: { path: "userId", select: "username avatar" }, 
             });
 
         if (!video) {
@@ -166,15 +157,15 @@ async function addView(req, res) {
     try {
         const videoId = req.params.id;
 
-        // Increment the views count for the video
+        // Increment the views 
         const video = await Video.findByIdAndUpdate(
             videoId,
-            { $inc: { views: 1 } }, // Increment the `views` field by 1
-            { new: true } // Return the updated document
+            { $inc: { views: 1 } },
+            { new: true }
         );
 
         if (!video) {
-            return res.status(404).json({ message: "Video not found." });
+            return res.status(404).send("Video not found.");
         }
 
         res.status(200).json({
@@ -186,19 +177,18 @@ async function addView(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("Could not increment view, something went wrong.");
     }
 }
 
 async function random(req, res) {
     try {
-        // Fetch a random set of videos
         const randomVideos = await Video.aggregate([
-            { $sample: { size: 10 } } // Randomly select 10 videos (adjustable)
+            { $sample: { size: 10 } } // seleting 10 videos
         ]);
 
         if (randomVideos.length === 0) {
-            return res.status(404).json({ message: "No videos found." });
+            return res.status(404).send("No videos found.");
         }
 
         res.status(200).json({
@@ -207,19 +197,18 @@ async function random(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("Some error occured while fetching randomly.");
     }
 }
 
 async function trend(req, res) {
     try {
-        // Fetch videos sorted by views in descending order (trending videos)
         const trendingVideos = await Video.find()
-            .sort({ views: -1 }) // Sort by `views` in descending order
-            .limit(10); // Limit to top 10 videos (optional)
+            .sort({ views: -1 }) 
+            .limit(10);
 
         if (trendingVideos.length === 0) {
-            return res.status(404).json({ message: "No videos found." });
+            return res.status(404).send("No videos found.");
         }
 
         res.status(200).json({
@@ -228,17 +217,15 @@ async function trend(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("some error.");
     }
 }
 
 
 async function sub(req, res) {
     try {
-        // Get the user ID from the verified token (added by verifyToken middleware)
         const userId = req.user._id;
 
-        // Find the user and fetch their subscribed channels
         const user = await User.findById(userId).populate("subscribedChannels");
 
         if (!user) {
@@ -251,11 +238,11 @@ async function sub(req, res) {
 
         // Fetch videos from all subscribed channels
         const videos = await Video.find({ channelId: { $in: user.subscribedChannels } })
-            .sort({ createdAt: -1 }) // Sort videos by most recent
-            .limit(50); // Optional: limit the number of videos returned
+            .sort({ createdAt: -1 }) 
+            .limit(50); 
 
         if (videos.length === 0) {
-            return res.status(404).json({ message: "No videos found in subscribed channels." });
+            return res.status(404).send("No videos found in subscribed channels.");
         }
 
         res.status(200).json({
@@ -264,7 +251,7 @@ async function sub(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error." });
+        res.status(500).send("Internal server error.");
     }
 }
 
@@ -288,43 +275,40 @@ async function search(req, res) {
             return res.status(400).json({ message: "Search query is required" });
         }
 
-        // Perform a text search on video title, description, or any other searchable fields
         const videos = await Video.find({
             $or: [
-                { title: new RegExp(query, "i") }, // Case-insensitive search for title
-                { description: new RegExp(query, "i") }, // Case-insensitive search for description
-                { tags: { $in: [query] } }, // Search in tags array if tags are used
+                { title: new RegExp(query, "i") }, // Case-insensitive 
+                { description: new RegExp(query, "i") },
+                { tags: { $in: [query] } },
             ],
-        }).sort({ createdAt: -1 }); // Sort results by most recent
+        }).sort({ createdAt: -1 }); 
 
         res.status(200).json(videos);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).send("Internal server error");
     }
 }
 
 async function likeVideo(req, res) {
     try {
         const { videoId } = req.params;
-        const userId = req.user._id; // Extract user ID from the verified token
+        const userId = req.user._id; //  via verified token middleware
 
-        // Find the video by ID
         const video = await Video.findById(videoId);
         if (!video) {
             return res.status(404).json({ message: "Video not found" });
         }
 
-        // Check if the user has already liked the video
+        // what if the user has already liked the video
         if (video.likes.includes(userId)) {
-            return res.status(400).json({ message: "You have already liked this video" });
+            return res.status(400).send("You have already liked this video");
         }
 
-        // Add the user ID to the likes array and remove it from dislikes if present
+        // remove the user from dislike array, add to like array
         video.likes.push(userId);
         video.dislikes = video.dislikes.filter((id) => id !== userId);
 
-        // Save the updated video
         await video.save();
 
         res.status(200).json({
@@ -334,31 +318,29 @@ async function likeVideo(req, res) {
         });
     } catch (error) {
         console.error("Error liking the video:", error);
-        res.status(500).json({ message: "Server error while liking the video" });
+        res.status(500).send("Server error while liking the video");
     }
 }
 
 async function dislikeVideo(req, res) {
     try {
         const { videoId } = req.params;
-        const userId = req.user._id; // Extract user ID from the verified token
+        const userId = req.user._id; 
 
-        // Find the video by ID
         const video = await Video.findById(videoId);
         if (!video) {
             return res.status(404).json({ message: "Video not found" });
         }
 
-        // Check if the user has already disliked the video
+        
         if (video.dislikes.includes(userId)) {
             return res.status(400).json({ message: "You have already disliked this video" });
         }
 
-        // Add the user ID to the dislikes array and remove it from likes if present
+        // remove user from liked array, add user to dislike array
         video.dislikes.push(userId);
         video.likes = video.likes.filter((id) => id !== userId);
 
-        // Save the updated video
         await video.save();
 
         res.status(200).json({
@@ -368,7 +350,7 @@ async function dislikeVideo(req, res) {
         });
     } catch (error) {
         console.error("Error disliking the video:", error);
-        res.status(500).json({ message: "Server error while disliking the video" });
+        res.status(500).send("Server error while disliking the video");
     }
 }
 

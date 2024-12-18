@@ -14,25 +14,22 @@ async function getAllUser(req, res) {
 }
 
 async function getUser(req, res) {
-  const { id } = req.params; // Extract the user ID from the request parameters
+  const { id } = req.params; 
 
   try {
-    // Find the user by ID
+
     const user = await User.findById(id)
-      .populate('channels') // Populate the channels the user owns
-      .populate('subscribedChannels'); // Populate the channels the user is subscribed to
+      .populate('channels') 
+      .populate('subscribedChannels');
 
     if (!user) {
-      // If no user is found, return a 404 error
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If user is found, send the user data as a response
     res.status(200).json(user);
   } catch (error) {
-    // Handle any errors during the query
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).send("Something went wrong while getting user data");
   }
 }
 
@@ -52,20 +49,16 @@ async function updateUser(req, res) {
     const userId = req.params.id;
     const updatedData = req.body;
 
-    // Find and update the user by ID
     const updatedUser = await User.findByIdAndUpdate(userId, updatedData, { new: true, runValidators: true });
 
     if (!updatedUser) {
-      // If no user is found, return a 404 error
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).send("User not found");
     }
 
-    // Send the updated user data as a response
     res.status(200).json(updatedUser);
   } catch (error) {
-    // Handle any errors during the update
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).send("Something went wrong while updating user");
   }
 
 }
