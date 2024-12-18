@@ -8,9 +8,9 @@ const VideoRouter = express.Router();
 VideoRouter.get("/getAllVideos", getAllVideos);
 VideoRouter.post("/addVideo", verifyToken, addVideo);
 VideoRouter.put("/updateVideo/:id", verifyToken, updateVideo)
-VideoRouter.delete("/deleteVide/:id", verifyToken, deleteVideo)
+VideoRouter.delete("/deleteVideo/:id", verifyToken, deleteVideo)
 VideoRouter.get("/getVideo/:id", getVideo);
-VideoRouter.put("/view/:id", addView)
+VideoRouter.put("/addView/:id", addView)
 VideoRouter.get("/trend", trend)
 VideoRouter.get("/random", random)
 VideoRouter.get("/sub", verifyToken, sub)

@@ -3,10 +3,6 @@ const mongoose = require('mongoose');
 
 // Define the Video Schema
 const videoSchema = new mongoose.Schema({
-  // userId: {
-  //   type: String,
-  //   required: true,
-  // },
   videoUrl: {
     type: String,
     required: true,

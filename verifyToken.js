@@ -23,7 +23,7 @@ function verifyToken(req, res, next) {
       return;
     }
     req.user = user.user;
-    console.log(req.user);
+    // console.log(req.user);
     next();
   })
   

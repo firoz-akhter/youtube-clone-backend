@@ -5,7 +5,8 @@ const Video = require("../models/videoModel");
 
 
 async function addChannel(req, res) {
-  const { userId } = req.params;
+  const userId = req.user._id;
+  // console.log(userId); return ;
   const { channelName, description, channelBanner } = req.body;
 
   try {
@@ -41,6 +42,7 @@ async function addChannel(req, res) {
 }
 
 async function getChannelAdmin(req, res) {
+  let userId = req.user._id;
   const { id } = req.params; // Channel ID
 
   try {
@@ -56,6 +58,13 @@ async function getChannelAdmin(req, res) {
     // If no channel is found, return an error
     if (!channel) {
       return res.status(404).json({ message: "Channel not found" });
+    }
+
+    // Check if the current user is the owner of the channel
+    // console.log("userId", userId);
+    // console.log("channel.owner._id.toString()", channel.owner.id);
+    if (channel.owner.id !== userId) {
+      return res.status(403).json({ message: "This is not your channel." });
     }
 
     // Return the channel details
@@ -100,7 +109,7 @@ async function getChannel(req, res) {
 
 async function updateChannel(req, res) {
   const { id } = req.params; // Channel ID
-  const userId = req.user.id; // Extracted from `verifyToken` middleware
+  const userId = req.user._id; // Extracted from `verifyToken` middleware
   const { channelName, description, channelBanner } = req.body; // Fields to update
 
   try {
@@ -112,8 +121,14 @@ async function updateChannel(req, res) {
     }
 
     // Check if the current user is the owner of the channel
-    if (channel.owner.toString() !== userId) {
-      return res.status(403).json({ message: "You are not authorized to update this channel." });
+    // console.log("userId", userId);
+    // console.log("channel.owner.id", channel.owner._id.toString());
+    // if (channel.owner.id !== userId) {
+    //   return res.status(403).json({ message: "You are not authorized to update this channel." });
+    // }
+
+    if (channel.owner._id.toString() !== userId) {
+      return res.status(403).json({ message: "This is not your channel." });
     }
 
     // Update the channel details
@@ -136,7 +151,7 @@ async function updateChannel(req, res) {
 
 async function deleteChannel(req, res) {
   const { id } = req.params; // Channel ID
-  const userId = req.user.id; // Extracted from `verifyToken` middleware
+  const userId = req.user._id; // Extracted from `verifyToken` middleware
 
   try {
     // Fetch the channel to verify existence and ownership
@@ -147,7 +162,7 @@ async function deleteChannel(req, res) {
     }
 
     // Check if the current user is the owner of the channel
-    if (channel.owner.toString() !== userId) {
+    if (channel.owner._id.toString() !== userId) {
       return res.status(403).json({ message: "You are not authorized to delete this channel." });
     }
 
@@ -211,7 +226,7 @@ async function getAllChannel(req, res) {
 async function subscribeChannel(req, res) {
 
   try {
-    const userId = req.user.id; // Get the user ID from the request parameters
+    const userId = req.user._id; // Get the user ID from the request parameters, via verifyToken
     const channelId = req.params.id;
 
     // Find the user by userId

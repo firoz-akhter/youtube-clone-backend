@@ -19,7 +19,7 @@ const channelSchema = new mongoose.Schema({
   },
   channelBanner: {
     type: String, // URL for the banner
-    required: true,
+    // required: true,
     validate: {
       validator: function (url) {
         return /^(https?:\/\/)[^\s]+$/.test(url); // Validate URL format

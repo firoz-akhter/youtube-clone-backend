@@ -5,14 +5,16 @@ const Video = require("../models/videoModel");
 
 async function addComment(req, res) {
   try {
-    const { videoId, text } = req.body;
-    const userId = req.user.id; // Assumes user is already authenticated and user ID is available via `req.user.id`
+    const { videoId } = req.params;
+    const userId = req.user._id;
+    const { text } = req.body;
 
-    if (!text || !videoId) {
-      return res.status(400).json({ message: "Video ID and comment text are required." });
+    // Validate input
+    if (!userId || !text) {
+      return res.status(400).json({ message: "User ID and comment text are required." });
     }
 
-    // Create a new comment
+    // Create a new comment object
     const comment = new Comment({
       videoId,
       userId,
@@ -20,67 +22,69 @@ async function addComment(req, res) {
     });
 
     // Save the comment to the database
-    await comment.save();
+    const savedComment = await comment.save();
 
-    // Add this comment to the video's comments array
+    // Update the video document to include the comment ID
     await Video.findByIdAndUpdate(videoId, {
-      $push: { comments: comment._id },
+      $push: { comments: savedComment._id },
     });
 
-    res.status(201).json({ message: "Comment added successfully", comment });
+    res.status(201).json(savedComment);
   } catch (error) {
-    console.error("Error adding comment:", error);
-    res.status(500).json({ message: "Server error while adding comment" });
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
   }
 }
 
 async function deleteComment(req, res) {
+  const commentId = req.params.commentId;
+  const userId = req.user._id; // Assuming `verifyToken` adds the authenticated user's ID to `req.user`
+
   try {
-    const commentId = req.params.commentId;
-    const userId = req.user.id; // Assuming `verifyToken` middleware sets the user ID in `req.user`
-
-    // Find the comment to be deleted
+    // Fetch the comment to ensure it exists and get its videoId
     const comment = await Comment.findById(commentId);
-
     if (!comment) {
       return res.status(404).json({ message: "Comment not found." });
     }
 
-    // Check if the user is the owner of the comment
+    // Ensure the user can only delete their own comments
     if (comment.userId.toString() !== userId) {
-      return res.status(403).json({ message: "You are not authorized to delete this comment." });
+      return res.status(403).json({ message: "You can only delete your own comments." });
     }
 
     // Remove the comment from the database
-    await Comment.findByIdAndRemove(commentId);
+    await Comment.findByIdAndDelete(commentId);
 
-    // Also remove the comment from the video's comments array
+    // Update the associated video's comments array to remove the commentId
     await Video.findByIdAndUpdate(comment.videoId, {
       $pull: { comments: commentId },
     });
 
     res.status(200).json({ message: "Comment deleted successfully." });
   } catch (error) {
-    console.error("Error deleting comment:", error);
-    res.status(500).json({ message: "Server error while deleting comment." });
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
   }
 }
 
 async function getComments(req, res) {
+  const videoId = req.params.videoId;
+
   try {
-    const { videoId } = req.params;
-
-    // Find comments associated with the video ID
-    const comments = await Comment.find({ videoId }).populate("userId", "username avatar");
-
-    if (!comments.length) {
-      return res.status(404).json({ message: "No comments found for this video" });
+    // Validate input
+    if (!videoId) {
+      return res.status(400).json({ message: "Video ID is required." });
     }
+
+    // Fetch comments for the specified video
+    const comments = await Comment.find({ videoId })
+      .populate("userId", "username avatar") // Populate the user's username and avatar
+      .sort({ createdAt: -1 }); // Sort comments by the most recent
 
     res.status(200).json(comments);
   } catch (error) {
-    console.error("Error fetching comments:", error);
-    res.status(500).json({ message: "Server error while fetching comments" });
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
   }
 }
 

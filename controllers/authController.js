@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 
 async function register(req, res) {
-
+    // let userId = req.user._id;
     let { username, email, password } = req.body;
 
     if (!username || !email || !password) {
@@ -25,7 +25,8 @@ async function register(req, res) {
         let newUser = new User({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            // owner: userId,
         })
 
         await newUser.save();

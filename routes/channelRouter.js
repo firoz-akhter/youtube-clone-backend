@@ -6,8 +6,9 @@ const { addChannel, getChannelAdmin, getChannel, updateChannel, deleteChannel, g
 const ChannelRouter = express.Router();
 
 
+// id is the channelId
 // write router for crud
-ChannelRouter.post("/addChannel/:userId", verifyToken, addChannel)
+ChannelRouter.post("/addChannel", verifyToken, addChannel)
 
 ChannelRouter.get("/getChannelAdmin/:id", verifyToken, getChannelAdmin) // provide full details
 
