@@ -14,8 +14,11 @@ function verifyToken(req, res, next) {
     return ;
   }
 
+  
+
   jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
     if(err) {
+      console.log(token);
       res.status(401).json({
         success: false,
         message: "Token is not valid!"

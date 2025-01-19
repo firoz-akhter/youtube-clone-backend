@@ -1,8 +1,6 @@
-const User = require("../models/UserModel")
+const User = require("../models/UserModel");
 const Channel = require("../models/ChannelModel");
 const Video = require("../models/videoModel");
-
-
 
 async function addChannel(req, res) {
   const userId = req.user._id;
@@ -33,13 +31,33 @@ async function addChannel(req, res) {
 
     res.status(201).json({
       message: "Channel created successfully",
-      channel: savedChannel
+      channel: savedChannel,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error while creating channel" });
   }
 }
+
+const getUserChannels = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Find the user by ID and populate the channel references
+    const user = await User.findById(userId).populate("channels"); // Populates the channels owned by the user
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Send the user's channels
+    res.status(200).json({
+      ownedChannels: user.channels,
+    });
+  } catch (error) {
+    console.error("Error fetching user channels:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 async function getChannelAdmin(req, res) {
   let userId = req.user._id;
@@ -48,11 +66,11 @@ async function getChannelAdmin(req, res) {
   try {
     // Fetch the channel with all details
     const channel = await Channel.findById(id)
-      .populate("owner", "username email avatar") 
-      .populate("subscribedUsers", "username email avatar") 
+      .populate("owner", "username email avatar")
+      .populate("subscribedUsers", "username email avatar")
       .populate({
-        path: "videos", 
-        select: "title description views likes thumbnailUrl", // 
+        path: "videos",
+        select: "title description views likes thumbnailUrl", //
       });
 
     // If no channel is found, return an error
@@ -79,7 +97,7 @@ async function getChannelAdmin(req, res) {
 }
 
 async function getChannel(req, res) {
-  const { id } = req.params; // Channel ID 
+  const { id } = req.params; // Channel ID
 
   try {
     // Fetch the channel, excluding the subscribedUsers field
@@ -108,10 +126,9 @@ async function getChannel(req, res) {
 async function updateChannel(req, res) {
   const { id } = req.params; // Channel ID
   const userId = req.user._id; // from `verifyToken` middleware
-  const { channelName, description, channelBanner } = req.body; 
+  const { channelName, description, channelBanner } = req.body;
 
   try {
-    
     const channel = await Channel.findById(id);
 
     if (!channel) {
@@ -158,7 +175,9 @@ async function deleteChannel(req, res) {
 
     // Check if the current user is the owner of the channel
     if (channel.owner._id.toString() !== userId) {
-      return res.status(403).json({ message: "You are not authorized to delete this channel." });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this channel." });
     }
 
     // removing channel from the user's owned channels list
@@ -189,7 +208,7 @@ async function getChannelVideos(req, res) {
     }
 
     // Fetching all videos of the channel
-    const videos = await Video.find({ channelId: id }).select("-comments"); // Exclude comments 
+    const videos = await Video.find({ channelId: id }).select("-comments"); // Exclude comments
 
     res.status(200).json({
       message: "Videos fetched successfully",
@@ -217,19 +236,18 @@ async function getAllChannel(req, res) {
 }
 
 async function subscribeChannel(req, res) {
-
   try {
     const userId = req.user._id; // userId via verifyToken
     const channelId = req.params.id;
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
-      return res.status(404).json({ message: 'Channel not found' });
+      return res.status(404).json({ message: "Channel not found" });
     }
 
     // user is already subscribed or not
@@ -237,30 +255,57 @@ async function subscribeChannel(req, res) {
 
     if (isSubscribed) {
       // Unsubscribe the user
-      user.subscribedChannels = user.subscribedChannels.filter(id => id !== channelId);
-      channel.subscribedUsers = channel.subscribedUsers.filter(id => id !== userId);
+      // user.subscribedChannels = user.subscribedChannels.filter(
+      //   (id) => id !== channelId
+      // );
+
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { $pull: { subscribedChannels: channelId } }, // MongoDB $pull operator
+        { new: true } // Return the updated document
+      );
+      // channel.subscribedUsers = channel.subscribedUsers.filter(
+      //   (id) => id !== userId
+      // );
+
+      const updatedChannel = await Channel.findByIdAndUpdate(
+        channelId,
+        { $pull: { subscribedUsers: userId } }, // MongoDB $pull operator
+        { new: true } // Return the updated document
+      );
       await user.save();
       await channel.save();
-      return res.status(200).json({ message: 'Unsubscribed successfully' });
+      return res.status(200).json({
+        message: "Unsubscribed successfully",
+        subscribedUsers: updatedChannel.subscribedUsers,
+      });
     } else {
       // Subscribe the user
       user.subscribedChannels.push(channelId);
       channel.subscribedUsers.push(userId);
       await user.save();
       await channel.save();
-      return res.status(200).json({ message: 'Subscribed successfully' });
+      return res.status(200).json({
+        message: "Subscribed successfully",
+        subscribedUsers: channel.subscribedUsers,
+      });
     }
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Something went wrong while subscribing");
   }
 }
 
+// write the route to unsubscribe a channel
 
-
-
-
-
-
-module.exports = { subscribeChannel, addChannel, getChannelAdmin, updateChannel, deleteChannel, getChannel, getChannelVideos, getAllChannel }
+module.exports = {
+  getUserChannels,
+  subscribeChannel,
+  addChannel,
+  getChannelAdmin,
+  updateChannel,
+  deleteChannel,
+  getChannel,
+  getChannelVideos,
+  getAllChannel,
+};

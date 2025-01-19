@@ -25,6 +25,10 @@ const videoSchema = new mongoose.Schema({
     ref: "Channel",
     required: true,
   },
+  channelName: {
+    type: String,
+    required: true,
+  },
   uploader: {
     type: String,
     required: true,
