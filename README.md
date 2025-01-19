@@ -68,3 +68,4 @@ Full-Stack Integration:
 Frontend and backend connected via RESTful API calls using Axios as well as Fetch.
 
 demo videoUrl => https://drive.google.com/file/d/1F49315FgRtxFtK9yQoT3TZDNEOXbCSEr/view
+github repo => https://github.com/firoz-akhter/youtube-clone-frontend.git
